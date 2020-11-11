@@ -16,6 +16,8 @@ class ViewController: UITableViewController {
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(promptForAnswer))
         
+        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(restartGame))
+        
         if let startWordsURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
             if let startWords = try? String(contentsOf: startWordsURL) {
                 allWords = startWords.components(separatedBy: "\n")
@@ -59,6 +61,18 @@ class ViewController: UITableViewController {
         present(ac, animated: true)
     }
     
+    @objc func restartGame() {
+        let ac = UIAlertController(title: "Restart the game?", message: nil, preferredStyle: .alert)
+        let submitAction = UIAlertAction(title: "OK", style: .default) { _ in
+            self.startGame()
+        }
+        
+        ac.addAction(submitAction)
+        ac.addAction(UIAlertAction(title: "Cancel", style: .default))
+        present(ac, animated: true)
+        
+    }
+    
     func submit(_ answer: String) {
         let lowerAnswer = answer.lowercased()
         let errorTitle: String
@@ -79,6 +93,7 @@ class ViewController: UITableViewController {
                 else {
                         errorTitle = "Word not recognised"
                         errorMessage = "You can't just make them up, you know!"
+                        showErrorMessage(title: errorTitle, message: errorMessage)
                 }
                 
             }
@@ -86,6 +101,7 @@ class ViewController: UITableViewController {
             else {
                     errorTitle = "Word used already"
                     errorMessage = "Be more original!"
+                    showErrorMessage(title: errorTitle, message: errorMessage)
             }
             
         }
@@ -94,11 +110,8 @@ class ViewController: UITableViewController {
                 guard let title = title?.lowercased() else { return }
                 errorTitle = "Word not possible"
                 errorMessage = "You can't spell that word from \(title)"
+                showErrorMessage(title: errorTitle, message: errorMessage)
         }
-
-        let ac = UIAlertController(title: errorTitle, message: errorMessage, preferredStyle: .alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .default))
-        present(ac, animated: true)
 
     }
     
@@ -124,10 +137,21 @@ class ViewController: UITableViewController {
         let checker = UITextChecker()
         let range = NSRange(location: 0, length: word.utf16.count)
         let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
-
-        return misspelledRange.location == NSNotFound
+        if word.count > 2 && word != title?.lowercased() && misspelledRange.location == NSNotFound {
+            return true
+        }
+        else {
+            return false
+        }
     }
-
+    
+    func showErrorMessage(title: String, message: String) -> Void {
+        
+        let ac = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "OK", style: .default))
+        present(ac, animated: true)
+        
+    }
 
 }
 
