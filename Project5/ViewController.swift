@@ -28,14 +28,62 @@ class ViewController: UITableViewController {
             allWords = ["silkworm"]
         }
         
-        startGame()
-        // Do any additional setup after loading the view.
+        let defaults = UserDefaults.standard
+        
+        if let savedTitle = defaults.object(forKey: "title") as? Data {
+            let jsonDecoder = JSONDecoder()
+
+            do {
+                title = try jsonDecoder.decode(String.self, from: savedTitle)
+            }
+            
+            catch {
+                print("Unable to save the data")
+            }
+        }
+
+        if let savedWords = defaults.object(forKey: "usedWords") as? Data {
+            let jsonDecoder = JSONDecoder()
+
+            do {
+                usedWords = try jsonDecoder.decode([String].self, from: savedWords)
+            }
+            
+            catch {
+                print("Unable to save the data")
+            }
+        }
+        
+        if title == "" || title == nil {
+            title = allWords.randomElement()
+            saveCurrentWord()
+            tableView.reloadData()
+        }
+
     }
     
     func startGame() {
+        if let bundleID = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleID)
+        }
+        
+        UserDefaults.standard.synchronize()
         title = allWords.randomElement()
+        saveCurrentWord()
         usedWords.removeAll(keepingCapacity: true)
+        saveAllEntries()
         tableView.reloadData()
+    }
+    
+    @objc func restartGame() {
+        let ac = UIAlertController(title: "Restart the game?", message: nil, preferredStyle: .alert)
+        let submitAction = UIAlertAction(title: "OK", style: .default) { _ in
+            self.startGame()
+        }
+        
+        ac.addAction(submitAction)
+        ac.addAction(UIAlertAction(title: "Cancel", style: .default))
+        present(ac, animated: true)
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -45,6 +93,8 @@ class ViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Word", for: indexPath)
         cell.textLabel?.text = usedWords[indexPath.row]
+        saveCurrentWord()
+        saveAllEntries()
         return cell
     }
     
@@ -61,18 +111,6 @@ class ViewController: UITableViewController {
         present(ac, animated: true)
     }
     
-    @objc func restartGame() {
-        let ac = UIAlertController(title: "Restart the game?", message: nil, preferredStyle: .alert)
-        let submitAction = UIAlertAction(title: "OK", style: .default) { _ in
-            self.startGame()
-        }
-        
-        ac.addAction(submitAction)
-        ac.addAction(UIAlertAction(title: "Cancel", style: .default))
-        present(ac, animated: true)
-        
-    }
-    
     func submit(_ answer: String) {
         let lowerAnswer = answer.lowercased()
         let errorTitle: String
@@ -82,12 +120,12 @@ class ViewController: UITableViewController {
             if isOriginal(word: lowerAnswer) {
                 if isReal(word: lowerAnswer) {
                     usedWords.insert(answer, at: 0)
+                    saveAllEntries()
 
                     let indexPath = IndexPath(row: 0, section: 0)
                     tableView.insertRows(at: [indexPath], with: .automatic)
                     
                     return
-                    
                 }
                 
                 else {
@@ -95,7 +133,6 @@ class ViewController: UITableViewController {
                         errorMessage = "You can't just make them up, you know!"
                         showErrorMessage(title: errorTitle, message: errorMessage)
                 }
-                
             }
             
             else {
@@ -103,7 +140,6 @@ class ViewController: UITableViewController {
                     errorMessage = "Be more original!"
                     showErrorMessage(title: errorTitle, message: errorMessage)
             }
-            
         }
         
         else {
@@ -112,7 +148,6 @@ class ViewController: UITableViewController {
                 errorMessage = "You can't spell that word from \(title)"
                 showErrorMessage(title: errorTitle, message: errorMessage)
         }
-
     }
     
     func isPossible(word: String) -> Bool {
@@ -146,11 +181,30 @@ class ViewController: UITableViewController {
     }
     
     func showErrorMessage(title: String, message: String) -> Void {
-        
         let ac = UIAlertController(title: title, message: message, preferredStyle: .alert)
         ac.addAction(UIAlertAction(title: "OK", style: .default))
         present(ac, animated: true)
         
+    }
+    
+    func saveAllEntries() {
+        let jsonEncoder = JSONEncoder()
+        if let savedData = try? jsonEncoder.encode(usedWords) {
+            let defaults = UserDefaults.standard
+            defaults.set(savedData, forKey: "usedWords")
+        } else {
+            print("Failed to save the entries.")
+        }
+    }
+        
+    func saveCurrentWord() {
+        let jsonEncoder = JSONEncoder()
+        if let savedData = try? jsonEncoder.encode(title) {
+            let defaults = UserDefaults.standard
+            defaults.set(savedData, forKey: "title")
+        } else {
+            print("Failed to save the current word.")
+        }
     }
 
 }
