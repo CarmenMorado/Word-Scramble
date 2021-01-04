@@ -14,7 +14,7 @@ are the same.
 all the UIAlertController work from there.
 -Add a left bar button item that calls startGame(), so users can restart with a new word whenever they want to.
 
-In addition, I completed the following challenge from Project 12:
+And the following (project 12) challenge:
 -Modify project 5 so that it saves the current word and all the player’s entries to UserDefaults, then loads them back when the app launches.
 
 ![ezgif-4-88e4d7f044d9](https://user-images.githubusercontent.com/42749527/99895548-9eebdf80-2c56-11eb-84b4-c1af4328e628.gif)
